@@ -6,47 +6,29 @@ from subprocess import STDOUT
 from os import linesep
 import pexpect
 
-# command = 'whoami'
 command = 'lc0'
 
-# def parse_output(output):
-#     print(f"<<{output}")
-#     if output.endswith("2023"):
-#         return "isready"
+def parse_output(before, after):
+    expected = after.decode()
+    output = before.decode() + expected
+    # Print full command
+    print(f"<<{output}")
 
-# def send_input(input, stdin):
-#     print(f">>{input}")
-#     stdin.write(b"{input}\n")
-#     stdin.flush()
+    if expected.endswith("2023"):
+        return "isready"
 
-# def main():
-#     process = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+def main():
+    child = pexpect.spawn(command)
 
-#     output_stream = process.stderr
-#     error_stream = process.stdout
+    child.expect('.+_', timeout=10)
+    parse_output(child.before, child.after)
 
-#     while True:
-#         output = output_stream.readline().decode('utf-8')
-#         if output == '' and process.poll() is not None:
-#             break
-#         if output:
-#             input = parse_output(output.strip())
-#             if input is not None:
-#                 send_input(input, process.stdin)
+    child.expect('.+2023', timeout=10)
+    input = parse_output(child.before, child.after)
+    if input is not None:
+        child.sendline(input)
 
-#     rc = process.poll()
-#     if rc == 0:
-#         print("Command succeeded.")
-#     else:
-#         error = error_stream.read().decode()
-#         print(f"Command failed ({rc}): {error}")
+    child.expect('readyok', timeout=10)
+    parse_output(child.before, child.after)
 
-# main()
-
-
-child = pexpect.spawn(command)
-child.expect('.*Jul 22 2023', timeout=300)
-print(child.before.decode() + child.after.decode())
-child.sendline('isready')
-child.expect('.*readyok', timeout=300)
-print(child.before.decode() + child.after.decode())   # Print the result of the command.
+main()
