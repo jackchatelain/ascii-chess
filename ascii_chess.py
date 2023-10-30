@@ -8,27 +8,32 @@ import pexpect
 
 command = 'lc0'
 
-def parse_output(before, after):
-    expected = after.decode()
-    output = before.decode() + expected
+def parse_output(child):
+    expected = child.after.decode()
     # Print full command
-    print(f"<<{output}")
+    print(f"<<{child.before.decode()}{expected}")
+    return expected
 
-    if expected.endswith("2023"):
-        return "isready"
+def send_input(input, child):
+    print(f">>{input}")
+    child.sendline(input)
 
 def main():
     child = pexpect.spawn(command)
 
     child.expect('.+_', timeout=10)
-    parse_output(child.before, child.after)
+    parse_output(child)
 
     child.expect('.+2023', timeout=10)
-    input = parse_output(child.before, child.after)
-    if input is not None:
-        child.sendline(input)
+    parse_output(child)
+    send_input('isready', child)
 
     child.expect('readyok', timeout=10)
-    parse_output(child.before, child.after)
+    parse_output(child)
+    send_input('ucinewgame', child)
+
+    child.expect('Found pb network file.+', timeout=10)
+    parse_output(child)
+    send_input('quit', child)
 
 main()
