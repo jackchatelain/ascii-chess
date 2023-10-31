@@ -6,16 +6,17 @@ from subprocess import STDOUT
 from os import linesep
 import pexpect
 
-command = 'lc0'
+command = "lc0"
 
 def parse_output(child):
     expected = child.after.decode()
     # Print full command
-    print(f"<<{child.before.decode()}{expected}")
+    #print(f"<<{child.before.decode()}{expected}<expectend")
+    print(f"{child.before.decode()}{expected}")
     return expected
 
 def send_input(input, child):
-    print(f">>{input}")
+    #print(f">>{input}>inputend")
     child.sendline(input)
 
 def main():
@@ -33,6 +34,13 @@ def main():
     send_input('ucinewgame', child)
 
     child.expect('Found pb network file.+', timeout=10)
+    parse_output(child)
+    child.expect('Initialized.+', timeout=10)
+    parse_output(child)
+    send_input('position startpos', child)
+    send_input('go wtime 10000 btime 10000', child)
+
+    child.expect('bestmove.+', timeout=10)
     parse_output(child)
     send_input('quit', child)
 
