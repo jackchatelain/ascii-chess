@@ -1,47 +1,94 @@
+import pexpect
 import subprocess
+import string
 from subprocess import Popen
 from subprocess import PIPE
 from subprocess import STDOUT
-
+from time import sleep
 from os import linesep
-import pexpect
+import chess
 
 command = "lc0"
+moves = []
+log = ["started"]
+
+def logthis(logtext):
+    log.append(str(logtext))
+    #print(f"LOG:{logtext}")
 
 def parse_output(child):
     expected = child.after.decode()
-    # Print full command
-    #print(f"<<{child.before.decode()}{expected}<expectend")
-    print(f"{child.before.decode()}{expected}")
-    return expected
+    logthis(f"Full output: {child.before.decode()}SEP{expected} end full command")
+    if "bestmove" in str(expected):
+        logthis("Output contains bestmove")
+        expectedTruncated = str(str(expected).replace("bestmove ", ""))
+        logthis(f"Removed phrase bestmove:{expectedTruncated}")
+        expectedTruncated = str(str(expectedTruncated).replace("ponder", ""))
+        logthis(f"Removed phrase ponder:{expectedTruncated}")
+        expectedTruncated = f'{expectedTruncated[0]}{expectedTruncated[1]}{expectedTruncated[2]}{expectedTruncated[3]}'
+        logthis(f"Removed all except first 4 chars:{expectedTruncated}")
+        print(f"Engine: {expectedTruncated}")
+        moves.append(str(expectedTruncated))
+    else:
+        logthis("Output doesn't contain bestmove")
+    #return expected
 
 def send_input(input, child):
     #print(f">>{input}>inputend")
     child.sendline(input)
+    logthis(f"Sent line: {input}")
 
 def main():
     child = pexpect.spawn(command)
+    logthis(f"PExpect spawned: {command}")
 
-    child.expect('.+_', timeout=10)
+    child.expect('.+_', timeout=5)
+    logthis(f"Expecting: .+_")
     parse_output(child)
 
-    child.expect('.+2023', timeout=10)
+    child.expect('.+2023', timeout=5)
+    logthis(f"Expecting: .+2023")
     parse_output(child)
     send_input('isready', child)
 
-    child.expect('readyok', timeout=10)
+    child.expect('readyok', timeout=5)
+    logthis(f"Expecting: readyok")
     parse_output(child)
     send_input('ucinewgame', child)
 
     child.expect('Found pb network file.+', timeout=10)
+    logthis(f"Expecting: Found pb network file.+")
     parse_output(child)
     child.expect('Initialized.+', timeout=10)
+    logthis(f"Expecting: Initialized.+")
     parse_output(child)
     send_input('position startpos', child)
     send_input('go wtime 10000 btime 10000', child)
-
-    child.expect('bestmove.+', timeout=10)
+    child.expect('bestmove.+', timeout=1000)
+    logthis(f"Expecting: bestmove.+")
     parse_output(child)
-    send_input('quit', child)
+
+    while True:
+        logthis(f"Player prompt shown")
+        mymove = str(input("Enter your move: "))
+        if mymove == "quit":
+            logthis(f"Player quitted")
+            quit()
+        logthis(f"Player entered: {mymove}")
+        moves.append(mymove)
+        logthis(f"Appended entry to moves")
+        logthis(f"Sending position to lc0")
+        send_input(f'position startpos moves {" ".join(moves)}', child)
+        logthis(f"Sending go to lc0")
+        send_input('go', child)
+        logthis(f"lc0 thinking")
+        print("Engine: Thinking...")
+        sleep(0.5)
+        send_input('stop', child)
+        logthis(f"Expecting timeout=11: bestmove.+")
+        child.expect('bestmove.+', timeout=1000)
+        logthis(f"lc0 outputted bestmove")
+        parse_output(child)
+        logthis(f"parsed bestmove")
 
 main()
