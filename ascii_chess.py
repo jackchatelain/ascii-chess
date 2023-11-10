@@ -9,9 +9,13 @@ from os import linesep
 #import chess
 #import termcolor
 
+# Configuration
+allowIllegalMoves = False
 command = "lc0"
+engineThinkTime = 0.5
+
+# Set up starting position
 moves = []
-log = ["started"]
 board = [("rook", "white"), ("knight", "white"), ("bishop", "white"), ("queen", "white"), ("king", "white"), ("bishop", "white"), ("knight", "white"), ("rook", "white"),
          ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"),
          ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""),
@@ -23,6 +27,7 @@ board = [("rook", "white"), ("knight", "white"), ("bishop", "white"), ("queen", 
          ]
 
 
+# Parse output from the engine
 def parse_output(child):
     expected = child.after.decode()
     if "bestmove" in str(expected):
@@ -32,10 +37,12 @@ def parse_output(child):
         print(f"Engine: {expectedTruncated}")
         moves.append(str(expectedTruncated))
 
+# Send input to the engine
 def send_input(input, child):
     child.sendline(input)
 
-def printboard(moves):
+# Display a chessboard in the terminal
+def updateBoard(moves, board):
     board_index = 1
     piece_names = {
         ("king", "white"): "♔",
@@ -52,54 +59,81 @@ def printboard(moves):
         ("knight", "black"): "♞",
         ("pawn", "black"): "♟︎",
 
-        ("", ""): "▢"
+        ("", ""): "▢",
     }
+
     for entry in board:
         print(f"{piece_names.get(entry)} ", end="")
         if board_index % 8 == 0 and board_index != 0:
             print("\n", end="")
         board_index += 1
+
+    for move in moves:
+        fileNums = {
+            "a": 1,
+            "b": 2,
+            "c": 3,
+            "d": 4,
+            "e": 5,
+            "f": 6,
+            "g": 7,
+            "h": 8,
+        }
+        start_index = int(fileNums.get(move[0])) * int(move[1])
+        end_index = int(fileNums.get(move[2])) * int(move[3])
+        start_item = board[start_index]
+        end_item = board[end_index]
+        pieceindex = 1
+        board2 = []
+        for piece in board:
+            pieceindex += 1
+            if pieceindex == start_index:
+                board2.append(end_item)
+            elif pieceindex == end_index:
+                board2.append(start_item)
+            else:
+                board2.append(piece)
+    return board2
     #output = colored(letter, colorNone)
 
-def main():
-    child = pexpect.spawn(command)
+# Play Chess
+child = pexpect.spawn(command)
 
-    child.expect(".+_", timeout=2)
-    parse_output(child)
+child.expect(".+_", timeout=2)
+parse_output(child)
 
-    child.expect(".+2023", timeout=2)
-    parse_output(child)
-    send_input("isready", child)
+child.expect(".+2023", timeout=2)
+parse_output(child)
+send_input("isready", child)
 
-    child.expect("readyok", timeout=2)
-    parse_output(child)
-    send_input("ucinewgame", child)
+child.expect("readyok", timeout=2)
+parse_output(child)
+send_input("ucinewgame", child)
 
-    child.expect("Found pb network file.+", timeout=6)
-    parse_output(child)
-    child.expect("Initialized.+", timeout=6)
-    parse_output(child)
-    send_input(f"position startpos", child)
+child.expect("Found pb network file.+", timeout=6)
+parse_output(child)
+child.expect("Initialized.+", timeout=6)
+parse_output(child)
+send_input(f"position startpos", child)
+send_input("go", child)
+print("Engine: Thinking...")
+sleep(engineThinkTime)
+send_input("stop", child)
+child.expect("bestmove.+", timeout=1000)
+parse_output(child)
+
+while True:
+    board3 = updateBoard(moves, board)
+    board = board3
+    mymove = str(input("Enter your move: "))
+    if mymove == "quit":
+        print("Quitting")
+        quit()
+    moves.append(mymove)
+    send_input(f"position startpos moves {' '.join(moves)}", child)
     send_input("go", child)
     print("Engine: Thinking...")
-    sleep(0.5)
+    sleep(engineThinkTime)
     send_input("stop", child)
     child.expect("bestmove.+", timeout=1000)
     parse_output(child)
-
-    while True:
-        printboard(moves)
-        mymove = str(input("Enter your move: "))
-        if mymove == "quit":
-            print("Quitting")
-            quit()
-        moves.append(mymove)
-        send_input(f"position startpos moves {' '.join(moves)}", child)
-        send_input("go", child)
-        print("Engine: Thinking...")
-        sleep(0.5)
-        send_input("stop", child)
-        child.expect("bestmove.+", timeout=1000)
-        parse_output(child)
-
-main()
