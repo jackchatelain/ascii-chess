@@ -6,89 +6,100 @@ from subprocess import PIPE
 from subprocess import STDOUT
 from time import sleep
 from os import linesep
-import chess
+#import chess
+#import termcolor
 
 command = "lc0"
 moves = []
 log = ["started"]
+board = [("rook", "white"), ("knight", "white"), ("bishop", "white"), ("queen", "white"), ("king", "white"), ("bishop", "white"), ("knight", "white"), ("rook", "white"),
+         ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"),
+         ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""),
+         ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""),
+         ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""),
+         ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""),
+         ("rook", "black"), ("knight", "black"), ("bishop", "black"), ("queen", "black"), ("king", "black"), ("bishop", "black"), ("knight", "black"), ("rook", "black"),
+         ("pawn", "black"), ("pawn", "black"), ("pawn", "black"), ("pawn", "black"), ("pawn", "black"), ("pawn", "black"), ("pawn", "black"), ("pawn", "black")
+         ]
 
-def logthis(logtext):
-    log.append(str(logtext))
-    #print(f"LOG:{logtext}")
 
 def parse_output(child):
     expected = child.after.decode()
-    logthis(f"Full output: {child.before.decode()}SEP{expected} end full command")
     if "bestmove" in str(expected):
-        logthis("Output contains bestmove")
         expectedTruncated = str(str(expected).replace("bestmove ", ""))
-        logthis(f"Removed phrase bestmove:{expectedTruncated}")
         expectedTruncated = str(str(expectedTruncated).replace("ponder", ""))
-        logthis(f"Removed phrase ponder:{expectedTruncated}")
-        expectedTruncated = f'{expectedTruncated[0]}{expectedTruncated[1]}{expectedTruncated[2]}{expectedTruncated[3]}'
-        logthis(f"Removed all except first 4 chars:{expectedTruncated}")
+        expectedTruncated = f"{expectedTruncated[0]}{expectedTruncated[1]}{expectedTruncated[2]}{expectedTruncated[3]}"
         print(f"Engine: {expectedTruncated}")
         moves.append(str(expectedTruncated))
-    else:
-        logthis("Output doesn't contain bestmove")
-    #return expected
 
 def send_input(input, child):
-    #print(f">>{input}>inputend")
     child.sendline(input)
-    logthis(f"Sent line: {input}")
+
+def printboard(moves):
+    board_index = 1
+    piece_names = {
+        ("king", "white"): "♔",
+        ("queen", "white"): "♕",
+        ("rook", "white"): "♖",
+        ("bishop", "white"): "♗",
+        ("knight", "white"): "♘",
+        ("pawn", "white"): "♙",
+
+        ("king", "black"): "♚",
+        ("queen", "black"): "♛",
+        ("rook", "black"): "♜",
+        ("bishop", "black"): "♝",
+        ("knight", "black"): "♞",
+        ("pawn", "black"): "♟︎",
+
+        ("", ""): "▢"
+    }
+    for entry in board:
+        print(f"{piece_names.get(entry)} ", end="")
+        if board_index % 8 == 0 and board_index != 0:
+            print("\n", end="")
+        board_index += 1
+    #output = colored(letter, colorNone)
 
 def main():
     child = pexpect.spawn(command)
-    logthis(f"PExpect spawned: {command}")
 
-    child.expect('.+_', timeout=5)
-    logthis(f"Expecting: .+_")
+    child.expect(".+_", timeout=2)
     parse_output(child)
 
-    child.expect('.+2023', timeout=5)
-    logthis(f"Expecting: .+2023")
+    child.expect(".+2023", timeout=2)
     parse_output(child)
-    send_input('isready', child)
+    send_input("isready", child)
 
-    child.expect('readyok', timeout=5)
-    logthis(f"Expecting: readyok")
+    child.expect("readyok", timeout=2)
     parse_output(child)
-    send_input('ucinewgame', child)
+    send_input("ucinewgame", child)
 
-    child.expect('Found pb network file.+', timeout=10)
-    logthis(f"Expecting: Found pb network file.+")
+    child.expect("Found pb network file.+", timeout=6)
     parse_output(child)
-    child.expect('Initialized.+', timeout=10)
-    logthis(f"Expecting: Initialized.+")
+    child.expect("Initialized.+", timeout=6)
     parse_output(child)
-    send_input('position startpos', child)
-    send_input('go wtime 10000 btime 10000', child)
-    child.expect('bestmove.+', timeout=1000)
-    logthis(f"Expecting: bestmove.+")
+    send_input(f"position startpos", child)
+    send_input("go", child)
+    print("Engine: Thinking...")
+    sleep(0.5)
+    send_input("stop", child)
+    child.expect("bestmove.+", timeout=1000)
     parse_output(child)
 
     while True:
-        logthis(f"Player prompt shown")
+        printboard(moves)
         mymove = str(input("Enter your move: "))
         if mymove == "quit":
-            logthis(f"Player quitted")
+            print("Quitting")
             quit()
-        logthis(f"Player entered: {mymove}")
         moves.append(mymove)
-        logthis(f"Appended entry to moves")
-        logthis(f"Sending position to lc0")
-        send_input(f'position startpos moves {" ".join(moves)}', child)
-        logthis(f"Sending go to lc0")
-        send_input('go', child)
-        logthis(f"lc0 thinking")
+        send_input(f"position startpos moves {' '.join(moves)}", child)
+        send_input("go", child)
         print("Engine: Thinking...")
         sleep(0.5)
-        send_input('stop', child)
-        logthis(f"Expecting timeout=11: bestmove.+")
-        child.expect('bestmove.+', timeout=1000)
-        logthis(f"lc0 outputted bestmove")
+        send_input("stop", child)
+        child.expect("bestmove.+", timeout=1000)
         parse_output(child)
-        logthis(f"parsed bestmove")
 
 main()
