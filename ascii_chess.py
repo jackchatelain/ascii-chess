@@ -16,16 +16,17 @@ engineThinkTime = 0.5
 
 # Set up starting position
 moves = []
-board = [("rook", "white"), ("knight", "white"), ("bishop", "white"), ("queen", "white"), ("king", "white"), ("bishop", "white"), ("knight", "white"), ("rook", "white"),
-         ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"),
-         ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""),
-         ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""),
-         ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""),
-         ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""),
+board = [
          ("rook", "black"), ("knight", "black"), ("bishop", "black"), ("queen", "black"), ("king", "black"), ("bishop", "black"), ("knight", "black"), ("rook", "black"),
-         ("pawn", "black"), ("pawn", "black"), ("pawn", "black"), ("pawn", "black"), ("pawn", "black"), ("pawn", "black"), ("pawn", "black"), ("pawn", "black")
+         ("pawn", "black"), ("pawn", "black"), ("pawn", "black"), ("pawn", "black"), ("pawn", "black"), ("pawn", "black"), ("pawn", "black"), ("pawn", "black"),
+         ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""),
+         ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""),
+         ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""),
+         ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""), ("", ""),
+         ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"),
+         ("rook", "white"), ("knight", "white"), ("bishop", "white"), ("queen", "white"), ("king", "white"), ("bishop", "white"), ("knight", "white"), ("rook", "white"),
          ]
-
+board.reverse()
 
 # Parse output from the engine
 def parse_output(child):
@@ -43,6 +44,45 @@ def send_input(input, child):
 
 # Display a chessboard in the terminal
 def updateBoard(moves, board):
+    if moves != []:
+        #for move in moves:
+        move = moves[-1]
+        print(move)
+        fileNums = {
+            "a": 1,
+            "b": 2,
+            "c": 3,
+            "d": 4,
+            "e": 5,
+            "f": 6,
+            "g": 7,
+            "h": 8,
+        }
+        print(moves)
+        print(board)
+        print(f"{fileNums.get(move[0])}times{move[1]}")
+        start_index = int(fileNums.get(move[0])) + (int(move[1]) - 1) * 8
+        end_index = int(fileNums.get(move[2])) + (int(move[3]) - 1) * 8
+        start_item = board[start_index]
+        end_item = board[end_index]
+        print(f"Debug{start_index} {end_index} {start_item} {end_item}")
+        pieceindex = 1
+        board2 = []
+        for piece in board:
+            pieceindex += 1
+            if pieceindex == start_index:
+                board2.append(end_item)
+            elif pieceindex == end_index:
+                board2.append(start_item)
+            else:
+                board2.append(piece)
+
+    if moves != []:
+        return board2
+    else:
+        return board
+
+def print_board(moves, board):
     board_index = 1
     piece_names = {
         ("king", "white"): "♔",
@@ -62,39 +102,13 @@ def updateBoard(moves, board):
         ("", ""): "▢",
     }
 
-    for entry in board:
+    boardReversed = board
+    boardReversed.reverse()
+    for entry in boardReversed:
         print(f"{piece_names.get(entry)} ", end="")
         if board_index % 8 == 0 and board_index != 0:
             print("\n", end="")
         board_index += 1
-
-    for move in moves:
-        fileNums = {
-            "a": 1,
-            "b": 2,
-            "c": 3,
-            "d": 4,
-            "e": 5,
-            "f": 6,
-            "g": 7,
-            "h": 8,
-        }
-        start_index = int(fileNums.get(move[0])) * int(move[1])
-        end_index = int(fileNums.get(move[2])) * int(move[3])
-        start_item = board[start_index]
-        end_item = board[end_index]
-        pieceindex = 1
-        board2 = []
-        for piece in board:
-            pieceindex += 1
-            if pieceindex == start_index:
-                board2.append(end_item)
-            elif pieceindex == end_index:
-                board2.append(start_item)
-            else:
-                board2.append(piece)
-    return board2
-    #output = colored(letter, colorNone)
 
 # Play Chess
 child = pexpect.spawn(command)
@@ -125,11 +139,15 @@ parse_output(child)
 while True:
     board3 = updateBoard(moves, board)
     board = board3
+    print_board(moves, board)
     mymove = str(input("Enter your move: "))
     if mymove == "quit":
         print("Quitting")
         quit()
     moves.append(mymove)
+    board3 = updateBoard(moves, board)
+    board = board3
+    print_board(moves, board)
     send_input(f"position startpos moves {' '.join(moves)}", child)
     send_input("go", child)
     print("Engine: Thinking...")
