@@ -41,26 +41,34 @@ def parse_output(child):
 def send_input(input, child):
     child.sendline(input)
 
+fileNums = {
+    "a": 1,
+    "b": 2,
+    "c": 3,
+    "d": 4,
+    "e": 5,
+    "f": 6,
+    "g": 7,
+    "h": 8,
+}
+
+def index_for_move(file_letter, rank):
+    file1 = fileNums.get(file_letter)
+    index = int(file1) + ((8 - (int(rank))) * 8) + 1
+    print(f"{file_letter}{rank}={index}")
+    return index
+
 # Display a chessboard in the terminal
 def updateBoard(moves, board):
     if moves != []:
         move = moves[-1]
         print(move)
-        fileNums = {
-            "a": 1,
-            "b": 2,
-            "c": 3,
-            "d": 4,
-            "e": 5,
-            "f": 6,
-            "g": 7,
-            "h": 8,
-        }
         print(moves)
         print(board)
         print(f"{fileNums.get(move[0])}times{move[1]}")
-        start_index = int(fileNums.get(move[0])) + ((8 - int(move[1])) * 8) + 1
-        end_index = int(fileNums.get(move[2])) + ((8 - int(move[3])) * 8) + 1
+        start_index = index_for_move(move[0], move[1])
+        end_index = index_for_move(move[2], move[3])
+        print(f"Debugbeforedebug{start_index} {end_index}")
         start_item = board[start_index]
         end_item = board[end_index]
         print(f"Debug{start_index} {end_index} {start_item} {end_item}")
@@ -69,11 +77,11 @@ def updateBoard(moves, board):
         for piece in board:
             pieceindex += 1
             if pieceindex == start_index:
-                board2.insert(0, end_item)
+                board2.append(end_item)
             elif pieceindex == end_index:
-                board2.insert(0, start_item)
+                board2.append(start_item)
             else:
-                board2.insert(0, piece)
+                board2.append(piece)
 
     if moves != []:
         return board2
@@ -100,9 +108,7 @@ def print_board(moves, board):
         ("", ""): "▢",
     }
 
-    boardReversed = board
-    boardReversed.reverse()
-    for entry in boardReversed:
+    for entry in board:
         print(f"{piece_names.get(entry)} ", end="")
         if board_index % 8 == 0 and board_index != 0:
             print("\n", end="")
@@ -138,6 +144,8 @@ while True:
     board3 = updateBoard(moves, board)
     board = board3
     print_board(moves, board)
+    
+    # Player move
     mymove = str(input("Enter your move: "))
     if mymove == "quit":
         print("Quitting")
@@ -146,6 +154,8 @@ while True:
     board3 = updateBoard(moves, board)
     board = board3
     print_board(moves, board)
+    
+    # Computer move
     send_input(f"position startpos moves {' '.join(moves)}", child)
     send_input("go", child)
     print("Engine: Thinking...")
