@@ -116,7 +116,7 @@ child = pexpect.spawn(command)
 child.expect(".+_", timeout=2)
 parse_output(child)
 
-child.expect(".+2023", timeout=2)
+child.expect(".+2024", timeout=2)
 parse_output(child)
 send_input("isready", child)
 
@@ -126,7 +126,7 @@ send_input("ucinewgame", child)
 
 child.expect("Found pb network file.+", timeout=6)
 parse_output(child)
-child.expect("Initialized.+", timeout=6)
+child.expect("BLAS max batch size.+", timeout=6)
 parse_output(child)
 send_input(f"position startpos", child)
 send_input("go", child)
