@@ -6,6 +6,7 @@ from subprocess import PIPE
 from subprocess import STDOUT
 from time import sleep
 from os import linesep
+from helpers import index_for_move
 #import chess
 #import termcolor
 
@@ -52,11 +53,11 @@ fileNums = {
     "h": 8,
 }
 
-def index_for_move(file_letter, rank):
-    file1 = fileNums.get(file_letter)
-    index = int(file1) + ((8 - (int(rank))) * 8) + 1
-    print(f"{file_letter}{rank}={index}")
-    return index
+# def index_for_move(file_letter, rank):
+#     file1 = fileNums.get(file_letter)
+#     index = int(file1) + ((8 - (int(rank))) * 8) + 1
+#     print(f"{file_letter}{rank}={index}")
+#     return index
 
 # Display a chessboard in the terminal
 def updateBoard(moves, board):
@@ -69,15 +70,15 @@ def updateBoard(moves, board):
         start_index = index_for_move(move[0], move[1])
         end_index = index_for_move(move[2], move[3])
         print(f"Debugbeforedebug{start_index} {end_index}")
-        start_item = board[start_index]
-        end_item = board[end_index]
+        start_item = board[start_index - 2]
+        end_item = board[end_index - 2]
         print(f"Debug{start_index} {end_index} {start_item} {end_item}")
         pieceindex = 1
         board2 = []
         for piece in board:
             pieceindex += 1
             if pieceindex == start_index:
-                board2.append(end_item)
+                board2.append(("", ""))
             elif pieceindex == end_index:
                 board2.append(start_item)
             else:
