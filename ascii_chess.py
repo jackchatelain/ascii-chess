@@ -26,7 +26,6 @@ board = [
          ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"), ("pawn", "white"),
          ("rook", "white"), ("knight", "white"), ("bishop", "white"), ("queen", "white"), ("king", "white"), ("bishop", "white"), ("knight", "white"), ("rook", "white"),
          ]
-board.reverse()
 
 # Parse output from the engine
 def parse_output(child):
@@ -45,7 +44,6 @@ def send_input(input, child):
 # Display a chessboard in the terminal
 def updateBoard(moves, board):
     if moves != []:
-        #for move in moves:
         move = moves[-1]
         print(move)
         fileNums = {
@@ -61,8 +59,8 @@ def updateBoard(moves, board):
         print(moves)
         print(board)
         print(f"{fileNums.get(move[0])}times{move[1]}")
-        start_index = int(fileNums.get(move[0])) + (int(move[1]) - 1) * 8
-        end_index = int(fileNums.get(move[2])) + (int(move[3]) - 1) * 8
+        start_index = int(fileNums.get(move[0])) + ((8 - int(move[1])) * 8) + 1
+        end_index = int(fileNums.get(move[2])) + ((8 - int(move[3])) * 8) + 1
         start_item = board[start_index]
         end_item = board[end_index]
         print(f"Debug{start_index} {end_index} {start_item} {end_item}")
@@ -71,11 +69,11 @@ def updateBoard(moves, board):
         for piece in board:
             pieceindex += 1
             if pieceindex == start_index:
-                board2.append(end_item)
+                board2.insert(0, end_item)
             elif pieceindex == end_index:
-                board2.append(start_item)
+                board2.insert(0, start_item)
             else:
-                board2.append(piece)
+                board2.insert(0, piece)
 
     if moves != []:
         return board2
