@@ -14,5 +14,4 @@ def index_for_move(file_letter, rank):
     column = int(fileNums.get(file_letter))
     row_index = int(rank)
     index = ((8 - row_index) * 8) + column + 1
-    print(f"{file_letter}{rank}={index}")
     return index

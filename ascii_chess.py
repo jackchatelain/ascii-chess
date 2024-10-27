@@ -63,16 +63,10 @@ fileNums = {
 def updateBoard(moves, board):
     if moves != []:
         move = moves[-1]
-        print(move)
-        print(moves)
-        print(board)
-        print(f"{fileNums.get(move[0])}times{move[1]}")
         start_index = index_for_move(move[0], move[1])
         end_index = index_for_move(move[2], move[3])
-        print(f"Debugbeforedebug{start_index} {end_index}")
         start_item = board[start_index - 2]
         end_item = board[end_index - 2]
-        print(f"Debug{start_index} {end_index} {start_item} {end_item}")
         pieceindex = 1
         board2 = []
         for piece in board:
